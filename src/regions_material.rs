@@ -24,6 +24,8 @@ pub struct ToolPreviewUniforms {
 
 #[derive(Asset, AsBindGroup, TypePath, Clone, Debug, Default)]
 pub struct RegionsMaterial {
+
+    
    // #[uniform(20)]
   //  pub chunk_uniforms: ChunkMaterialUniforms,
 
@@ -31,9 +33,13 @@ pub struct RegionsMaterial {
     pub tool_preview_uniforms: ToolPreviewUniforms,
 
     
-    #[texture(22)]  //rgba8unorm 
-   // #[sampler(23)]
+    #[texture(22, dimension = "2d",sample_type = "u_int")]  //rgba8unorm 
+    #[sampler(23)]
     pub regions_texture: Option<Handle<Image>>,
+
+      #[texture(24, dimension = "2d" )]  //rgba8unorm 
+    #[sampler(25)]
+    pub color_map_texture: Option<Handle<Image>>,
  
 }
 

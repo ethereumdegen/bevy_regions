@@ -19,6 +19,7 @@ pub struct RegionsConfig {
     pub boundary_dimensions: Vec2, 
  
     pub region_texture_path: PathBuf,
+    pub region_color_map_texture_path: PathBuf,
     pub regions_manifest_file: PathBuf,
     
 }
@@ -31,6 +32,7 @@ impl Default for RegionsConfig {
             
 
             region_texture_path: "regions/regions.png".into(),
+            region_color_map_texture_path: "regions/region_color_map.png".into(),
             regions_manifest_file: "regions/regions_manifest.ron".into(),
             
         }

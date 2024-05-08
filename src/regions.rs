@@ -56,6 +56,7 @@ pub struct  RegionsData {
     pub regions_data_status: RegionsDataStatus,
 
     texture_image_handle: Option<Handle<Image>>,
+    color_map_texture_handle:  Option<Handle<Image>>,
  
     regions_image_data_load_status: bool 
      // meshes: Res <Assets<Mesh>>
@@ -94,10 +95,13 @@ pub fn initialize_regions(
          
 
 
-           //  if regions_data.texture_image_handle.is_none() {
-           //      regions_data.texture_image_handle = Some( asset_server.load( regions_config.region_texture_path.clone()  ) );
+             if regions_data.color_map_texture_handle.is_none() {
+                 regions_data.color_map_texture_handle = Some( 
+                    asset_server.load( 
+                        regions_config.region_color_map_texture_path.clone() 
+                     ) );
 
-           //  }
+           }
 
 
              if regions_data.regions_image_data_load_status == false {continue};
@@ -112,11 +116,13 @@ pub fn initialize_regions(
                     base: StandardMaterial {
                         // can be used in forward or deferred mode.
                         opaque_render_method: OpaqueRendererMethod::Auto,
-                        alpha_mode: AlphaMode::Blend,
+                       // alpha_mode: AlphaMode::Opaque,
 
                         reflectance: 0.0,
                         perceptual_roughness: 0.9,
                         specular_transmission: 0.1,
+
+                        //base_color_texture: regions_data.color_map_texture_handle.clone(),
 
                         // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
                         // in forward mode, the output can also be modified after lighting is applied.
@@ -129,6 +135,7 @@ pub fn initialize_regions(
                          
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
                         regions_texture: regions_texture.clone(),
+                        color_map_texture: regions_data.color_map_texture_handle.clone(),
                       
                         ..default()
                     },
@@ -192,7 +199,7 @@ pub fn load_regions_texture_from_image(
             };
 
             // Specify the desired texture format
-            let desired_format = TextureFormat::Rgba8Unorm;
+            let desired_format = TextureFormat::Rgba8Uint;
 
 
             texture_image.texture_descriptor.format = desired_format; 

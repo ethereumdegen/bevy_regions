@@ -41,9 +41,9 @@ struct ToolPreviewUniforms {
 
 
 @group(1) @binding(1)
-var base_color_texture1: texture_2d<f32>;
+var base_color_texture: texture_2d<f32>;
 @group(1) @binding(2)
-var base_color_sampler1: sampler;
+var base_color_sampler: sampler;
  
 
 @group(1) @binding(3)
@@ -66,14 +66,18 @@ var occlusion_sampler: sampler;
 @group(2) @binding(21)
 var<uniform> tool_preview_uniforms: ToolPreviewUniforms;
  
-  
-
+   
 @group(2) @binding(22)
 var regions_map_texture: texture_2d<u32>;
+@group(2) @binding(23)
+var regions_map_sampler: sampler;
+ 
 
-//@group(2) @binding(23)
-//var regions_map_sampler: sampler;
-
+ 
+@group(2) @binding(24)
+var color_map_texture: texture_2d<f32>;
+@group(2) @binding(25)
+var color_map_sampler: sampler;
  
 
 @fragment
@@ -82,11 +86,33 @@ fn fragment(
     @builtin(front_facing) is_front: bool,
 ) -> @location(0) vec4<f32> {
     
-     
-   // let region_texture_value = textureLoad(regions_map_texture, vec2<i32>( mesh.uv  ), 0).r;
+    let regions_map_texture_dimensions = textureDimensions(regions_map_texture);
+    let regions_map_texture_width = i32(regions_map_texture_dimensions.x);
+    let regions_map_texture_height = i32(regions_map_texture_dimensions.y);
+
+    let uv_coord_scaled = vec2<i32>(
+        i32(mesh.uv.x * f32(regions_map_texture_width)),
+        i32(mesh.uv.y * f32(regions_map_texture_height))
+    );
+
+            //so hopefully this is working 
+     var region_texture_index = textureLoad(regions_map_texture, vec2<i32>(  uv_coord_scaled  ), 0).r;
     
-    // read from color array
-    let prelighting_color = vec4<f32>(f32( 22 ) / 255.0, 0.0, 0.0, 1.0);
+            //this works !!! 
+    //region_texture_index = u32(2);
+
+
+    let color_map_texture_dimensions = textureDimensions(color_map_texture);
+    let color_map_texture_width = f32(color_map_texture_dimensions.x);
+    let color_map_texture_height = f32(color_map_texture_dimensions.y);
+    
+    let x = f32(region_texture_index % u32(color_map_texture_width));
+    let y = f32(region_texture_index / u32(color_map_texture_height));
+    
+    let uv = vec2<f32>(x / color_map_texture_width, y / color_map_texture_height);
+    
+    let prelighting_color = textureSampleLevel(color_map_texture, color_map_sampler, uv, 0.0); 
+ 
     
    
   // generate a PbrInput struct from the StandardMaterial bindings

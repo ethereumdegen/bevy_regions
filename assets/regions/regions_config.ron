@@ -4,6 +4,9 @@ RegionsConfig(
     
   
     region_texture_path: "regions/regions.png",  
+
+    region_color_map_texture_path: "regions/region_color_map.png",  
+
     regions_manifest_file: "regions/regions_manifest.ron",  
     
     
