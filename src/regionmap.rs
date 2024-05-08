@@ -13,13 +13,14 @@ pub enum RegionMapError {
     LoadingError,
 }
 
-pub type RegionMapU16 = Vec<Vec<u16>>;
+pub type RegionMapU8 = Vec<Vec<u8>>;
 
-pub struct SubRegionMapU16(pub Vec<Vec<u16>>);
+ 
+pub struct SubRegionMapU8(pub Vec<Vec<u8>>);
 
-impl SubRegionMapU16 {
-    pub fn from_regionmap_u16(
-        regionmap: &RegionMapU16,
+impl SubRegionMapU8 {
+    /*pub fn from_regionmap_u8(  //not used .. ?
+        regionmap: &RegionMapU8,
         
         bounds_pct: [[f32; 2]; 2],
     ) -> Self {
@@ -58,15 +59,15 @@ impl SubRegionMapU16 {
             pixel_data.push(row);
         }
 
-        SubRegionMapU16(pixel_data)
-    }
+        SubRegionMapU8(pixel_data)
+    }*/
 
-    pub fn append_x_row(&mut self, row: Vec<u16>) {
+    pub fn append_x_row(&mut self, row: Vec<u8>) {
         self.0.push(row);
     }
 
     //this is busted ? \
-    pub fn append_y_col(&mut self, col: Vec<u16>) {
+    pub fn append_y_col(&mut self, col: Vec<u8>) {
         // Check if the number of elements in `col` matches the number of rows in the height data.
         // If not, you may need to handle this discrepancy based on your specific requirements.
         if col.len() != self.0.len() {
@@ -87,28 +88,23 @@ pub trait RegionMap {
     fn load_from_image(image: &Image) -> Result<Box<Self>, RegionMapError>;
 }
 
-impl RegionMap for RegionMapU16 {
-    fn load_from_image(image: &Image) -> Result<Box<Self>, RegionMapError> {
+impl RegionMap for RegionMapU8 {
+   fn load_from_image(image: &Image) -> Result<Box<Self>, RegionMapError> {
         let width = image.size().x as usize;
         let height = image.size().y as usize;
-
         let format = image.texture_descriptor.format;
 
-        if format != TextureFormat::R16Uint {
+        if format != TextureFormat::R8Uint {
             println!("regionmap: wrong format {:?}", format);
             return Err(RegionMapError::LoadingError);
         }
 
-        //maybe somehow fail if the format is not R16uint
-
-        // With the format being R16Uint, each pixel is represented by 2 bytes
         let mut region_map = Vec::with_capacity(height);
-
         for y in 0..height {
             let mut row = Vec::with_capacity(width);
             for x in 0..width {
-                let index = 2 * (y * width + x); // 2 because of R16Uint
-                let height_value = u16::from_le_bytes([image.data[index], image.data[index + 1]]);
+                let index = y * width + x;
+                let height_value = image.data[index];
                 row.push(height_value);
             }
             region_map.push(row);
@@ -116,5 +112,4 @@ impl RegionMap for RegionMapU16 {
 
         Ok(Box::new(region_map))
     }
- 
 }

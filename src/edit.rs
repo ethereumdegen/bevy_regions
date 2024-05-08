@@ -1,5 +1,7 @@
+use std::fs::File;
+use std::io::BufWriter;
 use std::ops::{Add, Div, Neg};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use bevy::ecs::entity::Entity;
 use bevy::math::Vec2;
@@ -17,7 +19,7 @@ use core::fmt::{self, Display, Formatter};
 
  
 use crate::regionmap::SubRegionMapU16;
-use crate::regions::{RegionsData, RegionsDataMapResource};
+use crate::regions::{RegionPlaneMesh, RegionsData, RegionsDataMapResource};
 use crate::regions_config::RegionsConfig;
 use crate::regions_material::RegionsMaterialExtension;
 
@@ -91,7 +93,7 @@ impl Display for BrushType {
 // entity, editToolType, coords, magnitude
 #[derive(Event, Debug, Clone)]
 pub struct EditRegionEvent {
-   // pub entity: Entity,
+    pub entity: Entity, //should always be the plane 
     pub tool: EditingTool,
     pub radius: f32,
     pub brush_hardness: f32, //1.0 is full
@@ -135,33 +137,35 @@ pub fn apply_command_events(
             //    continue;
             //}
 
-            let (terrain_data, terrain_config) = region_data_query.get_single().ok() else {continue};
+            let Some((region_data, region_config)) = region_data_query
+                    .get_single().ok() else {continue};
 
 
 
             match ev {
                 RegionCommandEvent::SaveAll => {
-                    let file_name = format!("{}.png", chunk.chunk_id);
-                    let asset_folder_path = PathBuf::from("assets");
-                    if *save_height {
-                        if let Some(chunk_height_data) =
-                            chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
+                    //let file_name = format!("{}.png", chunk.chunk_id);
+                    let region_data_path = region_config.region_texture_path;
+                     
+                    
+                      if let Some(region_data) =
+                            region_maps_res.regions_data_map
                         {
-                            save_chunk_height_map_to_disk(
-                                chunk_height_data,
-                                asset_folder_path
-                                    .join(&terrain_config.height_folder_path)
-                                    .join(&file_name),
-                            );
-                        }
+
+                        save_region_index_map_to_disk(
+                                &region_data,
+                                region_data_path,
+                        );
                     }
+                     
  
 
                      
 
-                    println!("save complete");
-                }
+                    println!("saved region data ");
+                
             }
+          }
         }
      
 
@@ -181,6 +185,10 @@ pub fn apply_tool_edits(
 
   //  terrain_query: Query<(&TerrainData, &TerrainConfig)>,
 
+     region_plane_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<RegionPlaneMesh>>,
+
+
+
     mut ev_reader: EventReader<EditRegionEvent>,
 
     mut evt_writer: EventWriter<RegionBrushEvent>,
@@ -191,7 +199,7 @@ pub fn apply_tool_edits(
         let intersected_entity = &ev.entity;
 
         //  if let Some((chunk, mut chunk_data)) = chunk_query.get_mut(intersected_entity.clone()).ok()
-        if let Some((chunk_entity, _)) = chunk_mesh_query.get(intersected_entity.clone()).ok() {
+        if let Some((chunk_entity, _ , _ )) = region_plane_mesh_query.get(intersected_entity.clone()).ok() {
             let mut chunk_entities_within_range: Vec<Entity> = Vec::new();
 
             let mut chunk_dimensions = [256, 256]; //compute me from terrain config
@@ -298,7 +306,7 @@ pub fn apply_tool_edits(
                                 &mut chunk_height_maps.chunk_height_maps.get_mut(&chunk.chunk_id)
                             {
 
-                                
+
                                 // if let Some(img) = images.get_mut( height_map_image_handle ){
 
                                 let tool_coords: &Vec2 = &ev.coordinates;
@@ -380,40 +388,7 @@ pub fn apply_tool_edits(
                                         }
                                     }
 
-                                    BrushType::Noise => {
-                                        let mut rng = rand::thread_rng();
-                                        for x in 0..img_data_length {
-                                            for y in 0..img_data_length {
-                                                let local_coords = Vec2::new(x as f32, y as f32);
-                                                if tool_coords_local.distance(local_coords)
-                                                    < *radius
-                                                {
-                                                    let original_height = height_map_data.0[x][y];
-                                                    let hardness_multiplier =
-                                                        get_hardness_multiplier(
-                                                            tool_coords_local
-                                                                .distance(local_coords),
-                                                            radius_clone,
-                                                            *brush_hardness,
-                                                        );
-
-                                                    // Generate a random value between -0.5 and 0.5, then scale it by the desired height variation
-                                                    let noise = rng.gen::<f32>() - 0.5;
-                                                    let noise_scaled = noise * *height as f32; // Adjust *height to control the scale of the noise
-                                                    let new_height = noise_scaled as u16;
-
-                                                    height_map_data.0[x][y] =
-                                                        apply_hardness_multiplier(
-                                                            original_height as f32,
-                                                            new_height as f32,
-                                                            hardness_multiplier,
-                                                        )
-                                                            as u16;
-                                                    height_changed = true;
-                                                }
-                                            }
-                                        }
-                                    }
+                                     
 
                                     BrushType::EyeDropper => {
                                         // Check if the clicked coordinates are within the current chunk
@@ -434,8 +409,8 @@ pub fn apply_tool_edits(
                                             if x < img_data_length && y < img_data_length {
                                                 let local_height = height_map_data.0[x][y];
                                                 evt_writer.send(
-                                                    RegionBrushEvent::EyeDropTerrainHeight {
-                                                        height: local_height,
+                                                    RegionBrushEvent::EyeDropRegionIndex   {
+                                                        region_index: local_height,
                                                     },
                                                 );
                                             }
@@ -484,4 +459,36 @@ fn apply_hardness_multiplier(
     hardness_multiplier: f32,
 ) -> f32 {
     original_height + (new_height - original_height) * hardness_multiplier
+}
+
+
+
+
+// outputs as R16 grayscale
+pub fn save_region_index_map_to_disk<P>(
+    region_map_data: &SubRegionMapU16, // Adjusted for direct Vec<Vec<u16>> input
+    save_file_path: P,
+) where
+    P: AsRef<Path>,
+{
+    let region_map_data = region_map_data.0.clone();
+
+    let height = region_map_data.len();
+    let width = region_map_data.first().map_or(0, |row| row.len());
+
+    let file = File::create(save_file_path).expect("Failed to create file");
+    let ref mut w = BufWriter::new(file);
+
+    let mut encoder = png::Encoder::new(w, width as u32, height as u32);
+    encoder.set_color(png::ColorType::Grayscale);
+    encoder.set_depth(png::BitDepth::Eight); // Change to 8-bit depth
+    let mut writer = encoder.write_header().expect("Failed to write PNG header");
+
+    // Flatten the Vec<Vec<u8>> to a Vec<u8> for the PNG encoder
+    let buffer: Vec<u8> = region_map_data.iter().flatten().cloned().collect();
+
+    // Write the image data
+    writer
+        .write_image_data(&buffer)
+        .expect("Failed to write PNG data");
 }

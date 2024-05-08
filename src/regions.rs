@@ -1,16 +1,15 @@
+use crate::regionmap::SubRegionMapU8;
 use bevy::asset::{AssetPath, LoadState};
 use bevy::pbr::{ExtendedMaterial, OpaqueRendererMethod};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
-    AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
+    TextureFormat,
 };
-use bevy::render::texture::{
-    ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
-};
+
 use bevy::utils::HashMap;
 
 //use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData, TerrainMaterialExtension};
-use crate::regionmap::{RegionMap, RegionMapU16};
+
 use crate::regions_config::RegionsConfig;
 use crate::regions_material::{RegionsMaterial, RegionsMaterialExtension, ToolPreviewUniforms};
 //use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
@@ -32,7 +31,14 @@ each chunk should have its own heightmap and splat map !!!  these are their own 
 
 #[derive(Resource, Default)]
 pub struct RegionsDataMapResource {
-    pub regions_data_map: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
+    pub regions_data_map: Option<SubRegionMapU8>, // Keyed by chunk id
+}
+
+
+
+#[derive(Component)]
+pub struct RegionPlaneMesh {
+
 }
 
 
