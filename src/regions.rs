@@ -28,6 +28,15 @@ each chunk should have its own heightmap and splat map !!!  these are their own 
 
 */
 
+
+
+#[derive(Resource, Default)]
+pub struct RegionsDataMapResource {
+    pub regions_data_map: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
+}
+
+
+
 //attach me to camera
 //#[derive(Component, Default)]
 //pub struct TerrainViewer {}

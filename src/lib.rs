@@ -1,3 +1,4 @@
+use crate::edit::BevyRegionEditsPlugin;
 use crate::regions::load_regions_texture_from_image;
 use crate::regions_material::RegionsMaterialExtension;
 use bevy::time::common_conditions::on_timer;
@@ -23,7 +24,7 @@ use edit::{
 };
 */
  
-//pub mod edit;
+ pub mod edit;
 
 
 
@@ -56,16 +57,12 @@ impl Plugin for BevyRegionsPlugin {
             Shader::from_wgsl
         );
         app.add_plugins(MaterialPlugin::<RegionsMaterialExtension>::default());
-        
-       // app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
+
+        app.add_plugins( BevyRegionEditsPlugin::default() ) ;
+     
         app.init_resource::<tool_preview::ToolPreviewResource>();
-
-     //   app.insert_resource(ChunkHeightMapResource::default());
-
-    //    app.add_systems(Update, chunk::update_splat_image_formats);
-   //     app.add_systems(Update, chunk::update_tool_uniforms);
-
+ 
       app.add_systems(
             Update,
             (
@@ -74,9 +71,7 @@ impl Plugin for BevyRegionsPlugin {
                 ) ,
         );
         
-        // ADD ME BACK IN ? 
-        //  app.add_systems(Update, (load_terrain_texture_from_image,load_terrain_normal_from_image));
-
+        
 
 
 /*
