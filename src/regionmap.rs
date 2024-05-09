@@ -1,5 +1,6 @@
 use bevy::prelude::*;
-use bevy::render::render_resource::TextureFormat;
+use bevy::render::render_asset::RenderAssetUsages;
+use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 
 use thiserror::Error;
 
@@ -19,48 +20,10 @@ pub type RegionMapU8 = Vec<Vec<u8>>;
 pub struct SubRegionMapU8(pub Vec<Vec<u8>>);
 
 impl SubRegionMapU8 {
-    /*pub fn from_regionmap_u8(  //not used .. ?
-        regionmap: &RegionMapU8,
-        
-        bounds_pct: [[f32; 2]; 2],
-    ) -> Self {
-        let width = regionmap.len() - 0;
-        let height = regionmap[0].len() - 0;
+   
 
-        // let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
-        //let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize , (height as f32 * bounds_pct[1][1]) as usize   ];
 
-        let start_bound = [
-            (width as f32 * bounds_pct[0][0]).ceil() as usize,
-            (height as f32 * bounds_pct[0][1]).ceil() as usize,
-        ];
-
-        //really need to load 1 extra row than we normally would think we would... so here it is
-        let end_bound = [
-            (width as f32 * bounds_pct[1][0]).ceil() as usize + 1,
-            (height as f32 * bounds_pct[1][1]).ceil() as usize + 1,
-        ];
-
-        let mut pixel_data = Vec::new();
-
-        for x in start_bound[0]..end_bound[0] {
-            if x >= width {
-                continue;
-            }
-
-            let mut row = Vec::new();
-            for y in start_bound[1]..end_bound[1] {
-                if y >= height {
-                    continue;
-                }
-
-                row.push(regionmap[x][y]);
-            }
-            pixel_data.push(row);
-        }
-
-        SubRegionMapU8(pixel_data)
-    }*/
+   
 
     pub fn append_x_row(&mut self, row: Vec<u8>) {
         self.0.push(row);
@@ -86,9 +49,50 @@ impl SubRegionMapU8 {
 
 pub trait RegionMap {
     fn load_from_image(image: &Image) -> Result<Box<Self>, RegionMapError>;
+
+    fn to_image(&self) -> Image;
 }
 
 impl RegionMap for RegionMapU8 {
+
+      fn to_image(&self) -> Image {
+        let raw_data = self ;
+        let height = raw_data.len();
+        let width = if height > 0 {
+            raw_data[0].len()
+        } else {
+            0
+        };
+
+        let mut modified_data = Vec::with_capacity(height * width * 4);
+
+        for row in raw_data {
+            for &value in row {
+                // Duplicate the grayscale value for each channel (R, G, B, A)
+                modified_data.extend_from_slice(&[value, value, value, 255]);
+            }
+        }
+
+        let size = Extent3d {
+            width: width as u32,
+            height: height as u32,
+            depth_or_array_layers: 1,
+        };
+
+        let dimension = TextureDimension::D2;
+
+        Image::new(
+            size,
+            dimension,
+            modified_data,
+            TextureFormat::Rgba8Uint,
+            RenderAssetUsages::default(),
+        )
+    }
+
+
+
+
    fn load_from_image(image: &Image) -> Result<Box<Self>, RegionMapError> {
         let width = image.size().x as usize;
         let height = image.size().y as usize;

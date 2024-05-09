@@ -1,3 +1,4 @@
+use crate::regions::{listen_for_region_events, RegionDataEvent, RegionsDataMapResource};
 use crate::edit::BevyRegionEditsPlugin;
 use crate::regions::load_regions_texture_from_image;
 use crate::regions_material::RegionsMaterialExtension;
@@ -60,13 +61,15 @@ impl Plugin for BevyRegionsPlugin {
 
 
         app.add_plugins( BevyRegionEditsPlugin::default() ) ;
-     
+        app.add_event::<RegionDataEvent>() ;
         app.init_resource::<tool_preview::ToolPreviewResource>();
+        app.init_resource::<RegionsDataMapResource>();
  
       app.add_systems(
             Update,
             (
                 initialize_regions,
+                listen_for_region_events ,
                 load_regions_texture_from_image 
                 ) ,
         );

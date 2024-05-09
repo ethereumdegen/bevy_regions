@@ -1,3 +1,4 @@
+use crate::regionmap::RegionMapU8;
 use std::fs::File;
 use std::io::BufWriter;
 use std::ops::{Add, Div, Neg};
@@ -17,9 +18,8 @@ use bevy::prelude::*;
  
 use core::fmt::{self, Display, Formatter};
 
- 
-use crate::regionmap::SubRegionMapU16;
-use crate::regions::{RegionPlaneMesh, RegionsData, RegionsDataMapResource};
+  
+use crate::regions::{RegionDataEvent, RegionPlaneMesh, RegionsData, RegionsDataMapResource};
 use crate::regions_config::RegionsConfig;
 use crate::regions_material::RegionsMaterialExtension;
 
@@ -48,8 +48,6 @@ impl Default for BevyRegionEditsPlugin {
 }
 impl Plugin for BevyRegionEditsPlugin {
     fn build(&self, app: &mut App) {
-
-
 
 
       app.add_event::<EditRegionEvent>();
@@ -103,7 +101,7 @@ pub struct EditRegionEvent {
 
 #[derive(Event, Debug, Clone)]
 pub enum RegionBrushEvent {
-    EyeDropRegionIndex { region_index: u16 },
+    EyeDropRegionIndex { region_index: u8 },
   //  EyeDropSplatMap { r: u8, g: u8, b: u8 },
 }
 
@@ -145,11 +143,11 @@ pub fn apply_command_events(
             match ev {
                 RegionCommandEvent::SaveAll => {
                     //let file_name = format!("{}.png", chunk.chunk_id);
-                    let region_data_path = region_config.region_texture_path;
+                    let region_data_path = &region_config.region_texture_path;
                      
                     
                       if let Some(region_data) =
-                            region_maps_res.regions_data_map
+                          &  region_maps_res.regions_data_map
                         {
 
                         save_region_index_map_to_disk(
@@ -175,7 +173,7 @@ pub fn apply_command_events(
 pub fn apply_tool_edits(
     mut asset_server: Res<AssetServer>,
 
-   region_data_query: Query<(&RegionsData, &RegionsConfig)> , 
+    mut region_data_query: Query<(&mut RegionsData, &RegionsConfig)> , 
 
     mut images: ResMut<Assets<Image>>,
     mut region_materials: ResMut<Assets<RegionsMaterialExtension>>,
@@ -192,9 +190,16 @@ pub fn apply_tool_edits(
     mut ev_reader: EventReader<EditRegionEvent>,
 
     mut evt_writer: EventWriter<RegionBrushEvent>,
+
+    mut region_data_event_writer: EventWriter<RegionDataEvent>
 ) {
     for ev in ev_reader.read() {
         eprintln!("-- {:?} -- region edit event!", &ev.tool);
+
+          let Some((region_data, region_config)) = region_data_query
+                    .get_single().ok() else {continue};
+
+
 
         let intersected_entity = &ev.entity;
 
@@ -202,8 +207,10 @@ pub fn apply_tool_edits(
         if let Some((chunk_entity, _ , _ )) = region_plane_mesh_query.get(intersected_entity.clone()).ok() {
             let mut chunk_entities_within_range: Vec<Entity> = Vec::new();
 
-            let mut chunk_dimensions = [256, 256]; //compute me from terrain config
-            if let Some((_, _, _, terrain_entity, _)) =
+            let mut plane_dimensions = region_config.boundary_dimensions.clone(); //compute me from  config
+          
+
+          /*  if let Some((_, _, _, terrain_entity, _)) =
                 chunk_query.get_mut(chunk_entity.get().clone()).ok()
             {
                 if let Some((terrain_data, terrain_config)) =
@@ -217,7 +224,12 @@ pub fn apply_tool_edits(
                         terrain_dimensions.y as u32 / chunk_rows,
                     ];
                 }
-            }
+            }*/
+
+             let tool_coords: &Vec2 = &ev.coordinates;
+
+             /*
+
 
             //populate chunk_entities_within_range
             for (chunk_entity, _, _, _, chunk_transform) in chunk_query.iter() {
@@ -235,11 +247,11 @@ pub fn apply_tool_edits(
                 if chunk_local_distance < 800.0 {
                     chunk_entities_within_range.push(chunk_entity);
                 }
-            }
+            }*/
 
             //compute average height since we need this for some tools
 
-            let mut total_height: f32 = 0.0;
+            /*let mut total_height: f32 = 0.0;
             let mut heights_len = 0;
 
             for chunk_entity_within_range in chunk_entities_within_range.clone() {
@@ -281,45 +293,42 @@ pub fn apply_tool_edits(
                         }
                     }
                 }
-            }
-            let average_height = total_height as f32 / heights_len as f32;
+            }*/
+            let average_height = 0; //for now  // total_height as f32 / heights_len as f32;
             // ------
             let radius = &ev.radius;
             let brush_type = &ev.brush_type;
 
+
+
             let brush_hardness = &ev.brush_hardness;
             //apply the tool to each chunk in range
-            for chunk_entity_within_range in chunk_entities_within_range {
-                if let Some((
-                    chunk_entity,
-                    chunk,
-                    mut chunk_data,
-                    terrain_entity,
-                    chunk_transform,
-                )) = chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
-                {
+           
                     //   if let Some(mut terrain_data) = terrain_data_query.get_mut(terrain_entity.get().clone()).ok() { //why cant i find this ?
 
                     match &ev.tool {
                         EditingTool::SetRegionMap { region_index } => {
-                            if let Some(height_map_data) =
-                                &mut chunk_height_maps.chunk_height_maps.get_mut(&chunk.chunk_id)
+                            if let Some(region_map_data) =
+                                &mut region_map_data_res.regions_data_map
                             {
 
 
                                 // if let Some(img) = images.get_mut( height_map_image_handle ){
 
                                 let tool_coords: &Vec2 = &ev.coordinates;
-                                let chunk_transform = chunk_transform.translation();
-                                let chunk_transform_vec2: Vec2 =
-                                    Vec2::new(chunk_transform.x, chunk_transform.z);
 
-                                let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
+                                let tool_coords_local: &Vec2 = &ev.coordinates;
+
+                             //   let chunk_transform = chunk_transform.translation();
+                              //  let chunk_transform_vec2: Vec2 =
+                              //      Vec2::new(chunk_transform.x, chunk_transform.z);
+
+                              //  let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
 
                                 //need to make an array of all of the data indices of the terrain that will be set .. hm ?
-                                let img_data_length = height_map_data.0.len();
+                                let img_data_length = region_map_data.len();
 
-                                let mut height_changed = false;
+                                let mut region_index_map_changed = false;
 
                                 let radius_clone = radius.clone();
 
@@ -334,20 +343,22 @@ pub fn apply_tool_edits(
                                                     radius_clone,
                                                     *brush_hardness,
                                                 );
-                                                let original_height = height_map_data.0[x][y];
+                                                let original_region_index = region_map_data[x][y];
 
                                                 if tool_coords_local.distance(local_coords)
                                                     < radius_clone
                                                 {
-                                                    let new_height = height.clone();
-                                                    height_map_data.0[x][y] =
+                                                    let new_region_index = region_index.clone();
+
+
+                                                    region_map_data[x][y] =
                                                         apply_hardness_multiplier(
-                                                            original_height as f32,
-                                                            new_height as f32,
+                                                            original_region_index as f32,
+                                                            new_region_index as f32,
                                                             hardness_multiplier,
                                                         )
-                                                            as u16;
-                                                    height_changed = true;
+                                                            as u8;
+                                                    region_index_map_changed = true;
                                                 }
                                             }
                                         }
@@ -368,21 +379,21 @@ pub fn apply_tool_edits(
                                                             *brush_hardness,
                                                         );
 
-                                                    let original_height = height_map_data.0[x][y];
+                                                    let original_region_index = region_map_data[x][y];
                                                     // Gather heights of the current point and its neighbors within the brush radius
 
-                                                    let new_height = ((average_height
-                                                        + original_height as f32)
+                                                    let new_region_index = ((average_height as f32
+                                                        + original_region_index as f32)
                                                         / 2.0)
-                                                        as u16;
-                                                    height_map_data.0[x][y] =
+                                                        as u8;
+                                                    region_map_data[x][y] =
                                                         apply_hardness_multiplier(
-                                                            original_height as f32,
-                                                            new_height as f32,
+                                                            original_region_index as f32,
+                                                            new_region_index as f32,
                                                             hardness_multiplier,
                                                         )
-                                                            as u16;
-                                                    height_changed = true;
+                                                            as u8;
+                                                    region_index_map_changed = true;
                                                 }
                                             }
                                         }
@@ -392,35 +403,37 @@ pub fn apply_tool_edits(
 
                                     BrushType::EyeDropper => {
                                         // Check if the clicked coordinates are within the current chunk
-                                        if tool_coords.x >= chunk_transform_vec2.x
-                                            && tool_coords.x
-                                                < chunk_transform_vec2.x
-                                                    + chunk_dimensions.x() as f32
-                                            && tool_coords.y >= chunk_transform_vec2.y
-                                            && tool_coords.y
-                                                < chunk_transform_vec2.y
-                                                    + chunk_dimensions.y() as f32
-                                        {
-                                            let tool_coords_local =
-                                                tool_coords.add(chunk_transform_vec2.neg());
+                                         
+                                            
                                             let x = tool_coords_local.x as usize;
                                             let y = tool_coords_local.y as usize;
 
                                             if x < img_data_length && y < img_data_length {
-                                                let local_height = height_map_data.0[x][y];
+                                              
+
+                                                let local_index_data = region_map_data[x][y];
                                                 evt_writer.send(
                                                     RegionBrushEvent::EyeDropRegionIndex   {
-                                                        region_index: local_height,
+                                                        region_index: local_index_data,
                                                     },
                                                 );
                                             }
-                                        }
+                                        
                                     }
                                 }
 
-                                if height_changed {
-                                    chunk_data.height_map_image_data_load_status =
-                                        RegionImageDataLoadStatus::NeedsReload;
+                                if region_index_map_changed {
+
+                                    //use an event !? 
+                                  //  region_data .region_map_image_data_load_status =
+                                   //     RegionsImageDataLoadStatus::NeedsReload;
+
+
+                                   region_data_event_writer.send(
+
+                                         RegionDataEvent::RegionMapNeedsReloadFromResourceData
+                                    );
+
                                 }
                             }
                         }
@@ -430,8 +443,7 @@ pub fn apply_tool_edits(
 
 
                     } //match
-                }
-            }
+                
         }
     }
 }
@@ -466,12 +478,12 @@ fn apply_hardness_multiplier(
 
 // outputs as R16 grayscale
 pub fn save_region_index_map_to_disk<P>(
-    region_map_data: &SubRegionMapU16, // Adjusted for direct Vec<Vec<u16>> input
+    region_map_data: &RegionMapU8, // Adjusted for direct Vec<Vec<u16>> input
     save_file_path: P,
 ) where
     P: AsRef<Path>,
 {
-    let region_map_data = region_map_data.0.clone();
+    let region_map_data = region_map_data.clone();
 
     let height = region_map_data.len();
     let width = region_map_data.first().map_or(0, |row| row.len());

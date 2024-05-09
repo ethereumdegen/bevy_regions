@@ -1,10 +1,12 @@
-use crate::regionmap::SubRegionMapU8;
+ 
 use bevy::asset::{AssetPath, LoadState};
 use bevy::pbr::{ExtendedMaterial, OpaqueRendererMethod};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
     TextureFormat,
 };
+
+use super::regionmap::{RegionMap,RegionMapU8,SubRegionMapU8};
 
 use bevy::utils::HashMap;
 
@@ -31,7 +33,7 @@ each chunk should have its own heightmap and splat map !!!  these are their own 
 
 #[derive(Resource, Default)]
 pub struct RegionsDataMapResource {
-    pub regions_data_map: Option<SubRegionMapU8>, // Keyed by chunk id
+    pub regions_data_map: Option<RegionMapU8>, // Keyed by chunk id
 }
 
 
@@ -47,6 +49,13 @@ pub struct RegionPlaneMesh {
 //#[derive(Component, Default)]
 //pub struct TerrainViewer {}
 
+
+
+#[derive(Event)]
+pub enum RegionDataEvent {
+    RegionMapNeedsReloadFromResourceData
+}
+/*
 #[derive(Default, PartialEq, Eq)]
 pub enum RegionsImageDataLoadStatus {
     //us this for texture image and splat image and alpha mask .. ?
@@ -54,7 +63,7 @@ pub enum RegionsImageDataLoadStatus {
     NotLoaded,
     Loaded,
     NeedsReload,
-}
+}*/
 
 #[derive(Default, PartialEq, Eq)]
 pub enum RegionsDataStatus {
@@ -73,7 +82,10 @@ pub struct  RegionsData {
     texture_image_handle: Option<Handle<Image>>,
     color_map_texture_handle:  Option<Handle<Image>>,
  
-    regions_image_data_load_status: bool 
+    regions_image_data_load_status: bool ,
+
+
+    //pub region_map_image_data_load_status:RegionsImageDataLoadStatus
      // meshes: Res <Assets<Mesh>>
 }
 
@@ -188,6 +200,9 @@ impl RegionsData {
 
 pub fn load_regions_texture_from_image(
     mut regions_query: Query<(&mut RegionsData, &RegionsConfig)>,
+
+    mut regions_data_res: ResMut<RegionsDataMapResource>,
+
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 ) {
@@ -213,6 +228,10 @@ pub fn load_regions_texture_from_image(
                 None => continue,
             };
 
+            let raw_data = RegionMapU8::load_from_image(texture_image).ok();
+
+            regions_data_res.regions_data_map = raw_data.map(|d| *d);
+
             // Specify the desired texture format
             let desired_format = TextureFormat::Rgba8Uint;
 
@@ -229,126 +248,60 @@ pub fn load_regions_texture_from_image(
 }
 
 
-//consider building a custom loader for this , not  Image
-/*pub fn load_regions_texture_from_image(
-    mut terrain_query: Query<(&mut TerrainData, &TerrainConfig)>,
-    asset_server: Res<AssetServer>,
+pub fn listen_for_region_events(
+
+   mut  evt_reader: EventReader<RegionDataEvent>,
+
+   regions_data_res: Res <RegionsDataMapResource>,
+  mut region_data_query: Query<(&mut RegionsData, &RegionsConfig)> , 
+
+
+  //   asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
-    
-) {
-    for (mut terrain_data, terrain_config) in terrain_query.iter_mut() {
-        if terrain_data.texture_image_handle.is_none() {
-            let array_texture_path = &terrain_config.diffuse_folder_path;
 
-            let tex_image = asset_server.load(AssetPath::from_path(array_texture_path));
-            terrain_data.texture_image_handle = Some(tex_image);
-        }
+    ){
 
-        //try to load the height map data from the height_map_image_handle
-        if !terrain_data.texture_image_finalized {
-            let texture_image: &mut Image = match &terrain_data.texture_image_handle {
-                Some(texture_image_handle) => {
-                    let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
+    for evt in evt_reader.read(){
 
-                    if texture_image_loaded != Some(LoadState::Loaded) {
-                        println!("terrain texture not yet loaded");
-                        continue;
-                    }
 
-                    images.get_mut(texture_image_handle).unwrap()
+          let Some((mut region_data, region_config)) = region_data_query
+                    .get_single_mut().ok() else {continue};
+
+
+        match evt{
+            RegionDataEvent::RegionMapNeedsReloadFromResourceData =>  {
+
+ 
+
+                let data_in_resource = &regions_data_res.regions_data_map;
+
+                if let Some(data_map ) = data_in_resource {
+
+                    let data_map_vec : RegionMapU8 = data_map.to_vec();
+                    let image = data_map_vec.to_image();
+
+
+                     region_data.texture_image_handle = Some(images.add(image));
+
+                     info!("update texture image handle ");
                 }
-                None => continue,
-            };
 
-            //https://github.com/bevyengine/bevy/pull/10254
-            texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                label: None,
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
-                ..default()
-            });
 
-            // Create a new array texture asset from the loaded texture.
-            let desired_array_layers = terrain_config.texture_image_sections;
 
-            let need_to_reinterpret = desired_array_layers > 1
-                && texture_image.texture_descriptor.size.depth_or_array_layers == 1;
 
-            if need_to_reinterpret {
-                //info!("texture info {:?}" , texture_image.texture_descriptor.dimension, texture_image.size().depth_or_array_layers);
 
-                texture_image.reinterpret_stacked_2d_as_array(desired_array_layers);
-            }
 
-           
 
-            terrain_data.texture_image_finalized = true;
+
+            },
         }
+
+
+
+
     }
+
 }
 
-pub fn load_terrain_normal_from_image(
-    mut terrain_query: Query<(&mut TerrainData, &TerrainConfig)>,
-    asset_server: Res<AssetServer>,
-    mut images: ResMut<Assets<Image>>,
-    //  materials: Res <Assets<TerrainMaterialExtension>>,
-) {
-    for (mut terrain_data, terrain_config) in terrain_query.iter_mut() {
-        if terrain_data.normal_image_handle.is_none() {
-            let normal_texture_path = &terrain_config.normal_folder_path;
 
-            let tex_image = asset_server.load(AssetPath::from_path(normal_texture_path));
-            terrain_data.normal_image_handle = Some(tex_image);
-        }
 
-        
-        if !terrain_data.normal_image_finalized {
-            let texture_image: &mut Image = match &terrain_data.normal_image_handle {
-                Some(texture_image_handle) => {
-                    let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
-
-                    if texture_image_loaded != Some(LoadState::Loaded) {
-                        println!("terrain texture not yet loaded");
-                        continue;
-                    }
-
-                    images.get_mut(texture_image_handle).unwrap()
-                }
-                None => continue,
-            };
-
-            //https://github.com/bevyengine/bevy/pull/10254
-            texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                label: None,
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
-                ..default()
-            });
-
-            // Create a new array texture asset from the loaded texture.
-            let desired_array_layers = terrain_config.texture_image_sections;
-
-            let need_to_reinterpret = desired_array_layers > 1
-                && texture_image.texture_descriptor.size.depth_or_array_layers == 1;
-
-            if need_to_reinterpret {
-                //info!("texture info {:?}" , texture_image.texture_descriptor.dimension, texture_image.size().depth_or_array_layers);
-
-                texture_image.reinterpret_stacked_2d_as_array(desired_array_layers);
-            }
-
-            
-
-            terrain_data.normal_image_finalized = true;
-        }
-    }
-}
-*/
