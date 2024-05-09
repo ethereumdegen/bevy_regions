@@ -10,25 +10,10 @@ use super::regionmap::{RegionMap,RegionMapU8,SubRegionMapU8};
 
 use bevy::utils::HashMap;
 
-//use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData, TerrainMaterialExtension};
-
+ 
 use crate::regions_config::RegionsConfig;
 use crate::regions_material::{RegionsMaterial, RegionsMaterialExtension, ToolPreviewUniforms};
-//use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
-
-//use crate::terrain_config::TerrainConfig;
-
-/*
-
-
-Chunks should be more persistent
-
-each chunk should have its own heightmap and splat map !!!  these are their own files too.
-
-
-
-*/
-
+ 
 
 
 #[derive(Resource, Default)]
@@ -43,28 +28,12 @@ pub struct RegionPlaneMesh {
 
 }
 
-
-
-//attach me to camera
-//#[derive(Component, Default)]
-//pub struct TerrainViewer {}
-
-
+ 
 
 #[derive(Event)]
 pub enum RegionDataEvent {
     RegionMapNeedsReloadFromResourceData
-}
-/*
-#[derive(Default, PartialEq, Eq)]
-pub enum RegionsImageDataLoadStatus {
-    //us this for texture image and splat image and alpha mask .. ?
-    #[default]
-    NotLoaded,
-    Loaded,
-    NeedsReload,
-}*/
-
+} 
 #[derive(Default, PartialEq, Eq)]
 pub enum RegionsDataStatus {
     //us this for texture image and splat image and alpha mask .. ?
@@ -75,18 +44,14 @@ pub enum RegionsDataStatus {
 
 #[derive(Component, Default)]
 pub struct  RegionsData {
-    // pub chunk_entity_lookup: HashMap<u32,Entity>,  //why is this necessary  ??
-    // pub terrain_config: TerrainConfig,
+     
     pub regions_data_status: RegionsDataStatus,
 
     texture_image_handle: Option<Handle<Image>>,
     color_map_texture_handle:  Option<Handle<Image>>,
  
     regions_image_data_load_status: bool ,
-
-
-    //pub region_map_image_data_load_status:RegionsImageDataLoadStatus
-     // meshes: Res <Assets<Mesh>>
+ 
 }
 
 impl RegionsData {
@@ -312,12 +277,7 @@ pub fn listen_for_region_events(
 
 
                 }
-
-
-
-
-
-
+ 
 
 
             },
