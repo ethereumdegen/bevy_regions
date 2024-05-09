@@ -11,7 +11,7 @@ use bevy::pbr::StandardMaterialUniform;
 
 use bevy::pbr::MaterialExtension;
 
-pub const REGION_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(5433284082028047579);
+pub const REGION_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(5433283072027046579);
 
  pub type RegionsMaterialExtension = ExtendedMaterial<StandardMaterial, RegionsMaterial>;
 

@@ -2,7 +2,7 @@
 name = "bevy_regions"
 description = "A region painting system using a u16 texture"
  
-version = "0.13.2"
+version = "0.13.3"
  
  
 edition = "2021"
@@ -16,7 +16,7 @@ keywords = [ "region" , "bevy" ]
 
 [dependencies]
 anyhow = "1.0.75"
-bevy = "0.13.0"
+bevy = "0.13.1"
 bevy_mod_sysfail = "6.0.0"
 futures-lite = "1.13.0"
 image = "0.24.7" 

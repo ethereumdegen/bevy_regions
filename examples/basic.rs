@@ -24,7 +24,7 @@ fn main() {
         .run();
 }
 
-
+/*
 fn create_and_save_texture(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let size = Extent3d {
         width: 1024,
@@ -58,7 +58,7 @@ fn create_and_save_texture(mut commands: Commands, mut images: ResMut<Assets<Ima
     img_buffer.save("texture.png").unwrap();
 }
 
-
+*/
 
 
 /// set up a simple 3D scene
