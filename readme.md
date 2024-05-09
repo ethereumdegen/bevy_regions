@@ -26,11 +26,10 @@ cargo run --example basic
 
  A very bevy-centric region painting plugin that takes advantage of entities, components and systems as much as possible to be as easy to understand and interact with as possible. 
   
- 
- 
 
+ An example of it being used in the bevy_mesh_terrain_editor to allow the editor to paint regions 
  
- ![image](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/492f8212-8d08-460c-ae54-7d7a0022eb95)
+ ![image](https://github.com/ethereumdegen/bevy_regions/assets/6249263/334daa5d-ce1e-4fbf-ada1-6973cbb23ba7)
 
 
 ## Texture Types 
