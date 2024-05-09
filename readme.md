@@ -36,7 +36,7 @@ cargo run --example basic
 ## Texture Types 
 
 *Region Map Texture*
-The source of region index ! This is a grayscale image in R16 format and if values are totally dead black then the shader will actually make alpha == 1 right there so you can blow holes in the terrain for caves and such (youll prob want to put rock doodads there to make it look nice!)
+The source of region index ! This uses a U8 texture which signifies the region index at any particular position. 
  
  
  
