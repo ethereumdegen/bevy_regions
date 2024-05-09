@@ -29,8 +29,7 @@ cargo run --example basic
 
  An example of it being used in the bevy_mesh_terrain_editor to allow the editor to paint regions 
  
- ![image](https://github.com/ethereumdegen/bevy_regions/assets/6249263/334daa5d-ce1e-4fbf-ada1-6973cbb23ba7)
-
+ ![image](https://github.com/ethereumdegen/bevy_regions/assets/6249263/00192676-9010-4727-9cca-6ee2bbb55c96)
 
 ## Texture Types 
 
