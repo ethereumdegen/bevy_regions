@@ -143,7 +143,7 @@ pub fn initialize_regions(
                     base: StandardMaterial {
                         // can be used in forward or deferred mode.
                         opaque_render_method: OpaqueRendererMethod::Auto,
-                       // alpha_mode: AlphaMode::Opaque,
+                        alpha_mode: AlphaMode::Blend,
 
                         reflectance: 0.0,
                         perceptual_roughness: 0.9,
@@ -264,7 +264,7 @@ pub fn listen_for_region_events(
     for evt in evt_reader.read(){
 
 
-          let Some((mut region_data, region_config)) = region_data_query
+          let Some((mut region_data, _region_config)) = region_data_query
                     .get_single_mut().ok() else {continue};
 
 

@@ -151,7 +151,7 @@ fn fragment(
 
     let within_tool_radius = f32(distance <= tool_radius);
 
-    let alpha_value = 0.5;
+    let alpha_value = 0.2;
 
     let final_color = mix(
         vec4(pbr_out.color.rgb,  alpha_value),
