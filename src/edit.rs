@@ -121,18 +121,12 @@ pub fn apply_command_events(
 
     region_data_query: Query<(&RegionsData, &RegionsConfig)>,
 
-    //chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<TerrainChunkMesh>>,
-   // meshes: Res<Assets<Mesh>>,
-
+    
     mut ev_reader: EventReader<RegionCommandEvent>,
 ) {
     for ev in ev_reader.read() {
        
-            //let region_entity_id = parent_terrain_entity.get();
-
-            //if region_data_query.get(region_entity_id).is_ok() == false {
-            //    continue;
-            //}
+           
 
             let Some((region_data, region_config)) = region_data_query
                     .get_single().ok() else {continue};
@@ -172,18 +166,13 @@ pub fn apply_command_events(
 }
 
 pub fn apply_tool_edits(
-  //  mut _asset_server: Res<AssetServer>,
-
+  
     region_data_query: Query<(&mut RegionsData, &RegionsConfig)> , 
 
-  //  _images: ResMut<Assets<Image>>,
-   // _region_materials: ResMut<Assets<RegionsMaterialExtension>>,
-  
+   
 
     mut region_map_data_res: ResMut<RegionsDataMapResource>,
-
-  //  terrain_query: Query<(&TerrainData, &TerrainConfig)>,
-
+ 
      region_plane_mesh_query: Query<(Entity,   &GlobalTransform), With<RegionPlaneMesh>>,
 
 
@@ -207,7 +196,7 @@ pub fn apply_tool_edits(
 
         let intersected_entity = &ev.entity;
 
-        //  if let Some((chunk, mut chunk_data)) = chunk_query.get_mut(intersected_entity.clone()).ok()
+       
        let Some((region_plane_entity,  _ )) = region_plane_mesh_query.get(intersected_entity.clone()).ok() else {
         warn!("region plane not intersected");
         continue
@@ -217,91 +206,14 @@ pub fn apply_tool_edits(
             let   plane_dimensions = region_config.boundary_dimensions.clone(); //compute me from  config
           
 
-          /*  if let Some((_, _, _, terrain_entity, _)) =
-                chunk_query.get_mut(chunk_entity.get().clone()).ok()
-            {
-                if let Some((terrain_data, terrain_config)) =
-                    terrain_query.get(terrain_entity.get().clone()).ok()
-                {
-                    let chunk_rows = terrain_config.chunk_rows;
-                    let terrain_dimensions = terrain_config.terrain_dimensions;
-
-                    chunk_dimensions = [
-                        terrain_dimensions.x as u32 / chunk_rows,
-                        terrain_dimensions.y as u32 / chunk_rows,
-                    ];
-                }
-            }*/
+      
 
              let tool_coords: &Vec2 = &ev.coordinates;
              info!("tool coords {:?}", tool_coords);
 
-             /*
+            
 
-
-            //populate chunk_entities_within_range
-            for (chunk_entity, _, _, _, chunk_transform) in chunk_query.iter() {
-                let tool_coords: &Vec2 = &ev.coordinates;
-                let chunk_transform = chunk_transform.translation();
-                let chunk_transform_vec2: Vec2 = Vec2::new(chunk_transform.x, chunk_transform.z);
-
-                let chunk_dimensions_vec: Vec2 =
-                    Vec2::new(chunk_dimensions.x() as f32, chunk_dimensions.y() as f32);
-                let chunk_center_transform =
-                    chunk_transform_vec2.add(chunk_dimensions_vec.div(2.0));
-
-                let chunk_local_distance = tool_coords.distance(chunk_center_transform);
-
-                if chunk_local_distance < 800.0 {
-                    chunk_entities_within_range.push(chunk_entity);
-                }
-            }*/
-
-            //compute average height since we need this for some tools
-
-            /*let mut total_height: f32 = 0.0;
-            let mut heights_len = 0;
-
-            for chunk_entity_within_range in chunk_entities_within_range.clone() {
-                if let Some((
-                    chunk_entity,
-                    chunk,
-                    mut chunk_data,
-                    terrain_entity,
-                    chunk_transform,
-                )) = chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
-                {
-                    if let Some(height_map_data) =
-                        &mut chunk_height_maps.chunk_height_maps.get_mut(&chunk.chunk_id)
-                    {
-                        let tool_coords: &Vec2 = &ev.coordinates;
-                        let chunk_transform = chunk_transform.translation();
-                        let chunk_transform_vec2: Vec2 =
-                            Vec2::new(chunk_transform.x, chunk_transform.z);
-
-                        let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
-
-                        //need to make an array of all of the data indices of the terrain that will be set .. hm ?
-                        let img_data_length = height_map_data.0.len();
-
-                        //let mut height_changed = false;
-                        let radius = &ev.radius;
-                        //   let radius_clone = radius.clone();
-
-                        //  let tool_height:f32 = *height as f32;
-                        for x in 0..img_data_length {
-                            for y in 0..img_data_length {
-                                let local_coords = Vec2::new(x as f32, y as f32);
-                                if tool_coords_local.distance(local_coords) < *radius {
-                                    let original_height = height_map_data.0[y][x];
-                                    total_height += original_height as f32;
-                                    heights_len += 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }*/
+            
             let average_height = 0; //for now  // total_height as f32 / heights_len as f32;
             // ------
             let radius = &ev.radius;
@@ -319,27 +231,20 @@ pub fn apply_tool_edits(
               let mut region_index_map_changed = false;
 
             let brush_hardness = &ev.brush_hardness;
-            //apply the tool to each chunk in range
-           
-                    //   if let Some(mut terrain_data) = terrain_data_query.get_mut(terrain_entity.get().clone()).ok() { //why cant i find this ?
-
+            
+               
                     match &ev.tool {
                         EditingTool::SetRegionMap { region_index } => {
                              
 
 
-                                // if let Some(img) = images.get_mut( height_map_image_handle ){
+                           
 
                                 let tool_coords: &Vec2 = &ev.coordinates;
 
                                 let tool_coords_local: &Vec2 = &ev.coordinates;
 
-                             //   let chunk_transform = chunk_transform.translation();
-                              //  let chunk_transform_vec2: Vec2 =
-                              //      Vec2::new(chunk_transform.x, chunk_transform.z);
-
-                              //  let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
-
+                          
                                 //need to make an array of all of the data indices of the terrain that will be set .. hm ?
                                 let img_data_length = region_map_data.len();
 
@@ -460,10 +365,7 @@ pub fn apply_tool_edits(
                 
               if region_index_map_changed {
 
-                                    //use an event !? 
-                                  //  region_data .region_map_image_data_load_status =
-                                   //     RegionsImageDataLoadStatus::NeedsReload;
-
+                             
 
                                    region_data_event_writer.send(
 
@@ -501,6 +403,7 @@ fn apply_hardness_multiplier(
 
 
 
+//move this to region_map.rs ? 
 
 // outputs as R16 grayscale
 pub fn save_region_index_map_to_disk<P>(
