@@ -33,7 +33,7 @@ pub struct RegionsMaterial {
     pub tool_preview_uniforms: ToolPreviewUniforms,
 
     
-    #[texture(22, dimension = "2d",sample_type = "u_int")]  //rgba8unorm 
+    #[texture(22, dimension = "2d",sample_type = "u_int")]  //rgba8uint
     #[sampler(23)]
     pub regions_texture: Option<Handle<Image>>,
 

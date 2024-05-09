@@ -113,12 +113,14 @@ fn fragment(
     
     let prelighting_color = textureSampleLevel(color_map_texture, color_map_sampler, uv, 0.0); 
  
-    
+        
+     
+   
    
   // generate a PbrInput struct from the StandardMaterial bindings
     var pbr_input = pbr_input_from_standard_material(mesh, is_front);
- 
-    //hack the material (StandardMaterialUniform)  so the color is from the terrain splat 
+     let alpha_value = pbr_input.material.base_color.a;
+
     pbr_input.material.base_color =  prelighting_color;
 
 
@@ -151,11 +153,11 @@ fn fragment(
 
     let within_tool_radius = f32(distance <= tool_radius);
 
-    let alpha_value = 0.2;
+  
 
     let final_color = mix(
         vec4(pbr_out.color.rgb,  alpha_value),
-        vec4(pbr_out.color.rgb * color_from_tool, alpha_value),
+        vec4(  color_from_tool, alpha_value),
         within_tool_radius
     );
           

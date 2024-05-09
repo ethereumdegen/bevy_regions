@@ -55,6 +55,8 @@ pub trait RegionMap {
 
 impl RegionMap for RegionMapU8 {
 
+    //this expects data to be stored  [y][x]
+    //rgba8uint
       fn to_image(&self) -> Image {
         let raw_data = self ;
         let height = raw_data.len();
@@ -92,28 +94,34 @@ impl RegionMap for RegionMapU8 {
 
 
 
-
+    //rgba8uint
    fn load_from_image(image: &Image) -> Result<Box<Self>, RegionMapError> {
-        let width = image.size().x as usize;
-        let height = image.size().y as usize;
-        let format = image.texture_descriptor.format;
+       
 
-        if format != TextureFormat::R8Uint {
-            println!("regionmap: wrong format {:?}", format);
-            return Err(RegionMapError::LoadingError);
+         let width = image.size().x as usize;
+    let height = image.size().y as usize;
+    let format = image.texture_descriptor.format;
+
+   if format!= TextureFormat::Rgba8Uint &&  format != TextureFormat::R8Uint && format != TextureFormat::Rgba8Unorm && format != TextureFormat::Rgba8UnormSrgb {
+        println!("regionmap: wrong format {:?}", format);
+        return Err(RegionMapError::LoadingError);
+    }
+
+    let mut region_map = Vec::with_capacity(height);
+      for y in 0..height {
+       let mut row = Vec::with_capacity(width);
+        
+        for x in 0..width {
+      
+            let index = (y * width + x) * 4;
+           
+            row.push(image.data[index]  ); //only read the R channel 
         }
+        region_map.push(row);
+    }
 
-        let mut region_map = Vec::with_capacity(height);
-        for y in 0..height {
-            let mut row = Vec::with_capacity(width);
-            for x in 0..width {
-                let index = y * width + x;
-                let height_value = image.data[index];
-                row.push(height_value);
-            }
-            region_map.push(row);
-        }
+    Ok(Box::new(region_map))
 
-        Ok(Box::new(region_map))
+
     }
 }

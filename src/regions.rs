@@ -145,24 +145,23 @@ pub fn initialize_regions(
                         opaque_render_method: OpaqueRendererMethod::Auto,
                         alpha_mode: AlphaMode::Blend,
 
+                        base_color: Color::rgba(1.0, 1.0, 1.0, 0.1),
+
                         reflectance: 0.0,
                         perceptual_roughness: 0.9,
                         specular_transmission: 0.1,
 
-                        //base_color_texture: regions_data.color_map_texture_handle.clone(),
+                       unlit:true, 
+                      fog_enabled :false,
 
-                        // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
-                        // in forward mode, the output can also be modified after lighting is applied.
-                        // see the fragment shader `extended_material.wgsl` for more info.
-                        // Note: to run in deferred mode, you must also add a `DeferredPrepass` component to the camera and either
-                        // change the above to `OpaqueRendererMethod::Deferred` or add the `DefaultOpaqueRendererMethod` resource.
+                        
                         ..Default::default()
                     },
                     extension: RegionsMaterial {
                          
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
                         regions_texture: regions_texture.clone(),
-                        color_map_texture: regions_data.color_map_texture_handle.clone(),
+                        color_map_texture: regions_data.color_map_texture_handle.clone() ,
                       
                         ..default()
                     },
@@ -174,8 +173,11 @@ pub fn initialize_regions(
            let regions_plane = commands.spawn(PlanarPbrBundle {
                 mesh: meshes.add(Plane3d::default().mesh().size( dimensions.x, dimensions.y )),
                 material: regions_material,
+                transform: Transform::from_xyz(dimensions.x/2.0, 0.0, dimensions.y/2.0),
                 ..default()
-            }).id();
+            })
+           .insert(RegionPlaneMesh{})
+           .id();
 
             commands.entity(  region_entity  ).add_child(  regions_plane ) ;
 
@@ -228,9 +230,9 @@ pub fn load_regions_texture_from_image(
                 None => continue,
             };
 
-            let raw_data = RegionMapU8::load_from_image(texture_image).ok();
+            let raw_data = RegionMapU8::load_from_image(texture_image).ok().unwrap();
 
-            regions_data_res.regions_data_map = raw_data.map(|d| *d);
+            regions_data_res.regions_data_map = Some( *raw_data  ) ;
 
             // Specify the desired texture format
             let desired_format = TextureFormat::Rgba8Uint;
@@ -248,8 +250,11 @@ pub fn load_regions_texture_from_image(
 }
 
 
-pub fn listen_for_region_events(
+ 
 
+
+pub fn listen_for_region_events(
+    mut commands : Commands, 
    mut  evt_reader: EventReader<RegionDataEvent>,
 
    regions_data_res: Res <RegionsDataMapResource>,
@@ -258,6 +263,14 @@ pub fn listen_for_region_events(
 
   //   asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
+    //mut region_materials: ResMut<Assets<RegionsMaterialExtension>>,
+
+
+    //plane_mesh_query: Query<Entity, With<RegionPlaneMesh>>,
+
+     plane_mat_ext_handle_query: Query<&Handle<RegionsMaterialExtension>, With<RegionPlaneMesh>>,
+
+    mut region_materials: ResMut<Assets<RegionsMaterialExtension>>,
 
     ){
 
@@ -266,6 +279,9 @@ pub fn listen_for_region_events(
 
           let Some((mut region_data, _region_config)) = region_data_query
                     .get_single_mut().ok() else {continue};
+
+
+       
 
 
         match evt{
@@ -278,12 +294,23 @@ pub fn listen_for_region_events(
                 if let Some(data_map ) = data_in_resource {
 
                     let data_map_vec : RegionMapU8 = data_map.to_vec();
-                    let image = data_map_vec.to_image();
+                    let new_regions_texture = data_map_vec.to_image();
 
 
-                     region_data.texture_image_handle = Some(images.add(image));
+                     region_data.texture_image_handle = Some(images.add(new_regions_texture));
 
                      info!("update texture image handle ");
+
+
+                      let Some(mat_ext_handle) = plane_mat_ext_handle_query.get_single().ok() else {continue};
+
+                      let Some(   mat_ext )  = region_materials.get_mut(mat_ext_handle) else {continue} ;
+
+                      mat_ext.extension.regions_texture = region_data.texture_image_handle.clone();
+
+ 
+
+
                 }
 
 

@@ -1,3 +1,4 @@
+use crate::tool_preview::update_tool_uniforms;
 use crate::regions::{listen_for_region_events, RegionDataEvent, RegionsDataMapResource};
 use crate::edit::BevyRegionEditsPlugin;
 use crate::regions::load_regions_texture_from_image;
@@ -70,7 +71,8 @@ impl Plugin for BevyRegionsPlugin {
             (
                 initialize_regions,
                 listen_for_region_events ,
-                load_regions_texture_from_image 
+                load_regions_texture_from_image ,
+                update_tool_uniforms
                 ) ,
         );
         
