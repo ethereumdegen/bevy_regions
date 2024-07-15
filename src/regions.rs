@@ -186,7 +186,7 @@ pub fn load_regions_texture_from_image(
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
                     if texture_image_loaded != Some(LoadState::Loaded) {
-                        println!("regions texture not yet loaded");
+                      //  println!("regions texture not yet loaded");
                         continue;
                     }
 
