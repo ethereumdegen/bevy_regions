@@ -32,12 +32,13 @@ pub struct RegionsMaterial {
     #[uniform(21)]
     pub tool_preview_uniforms: ToolPreviewUniforms,
 
-    
+        // https://github.com/bevyengine/bevy/blob/main/crates/bevy_render/macros/src/as_bind_group.rs
+
     #[texture(22, dimension = "2d",sample_type = "u_int")]  //rgba8uint
-    #[sampler(23)]
+    #[sampler(23 , sampler_type = "non_filtering"  )]  //sampler type needed as of bevy 0.15 .. also >>  texture_image.sampler = ImageSampler::nearest() ;
     pub regions_texture: Option<Handle<Image>>,
 
-      #[texture(24, dimension = "2d" )]  //rgba8unorm 
+    #[texture(24, dimension = "2d" )]  //rgba8unorm 
     #[sampler(25)]
     pub color_map_texture: Option<Handle<Image>>,
  

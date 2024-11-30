@@ -1,5 +1,6 @@
  
 use bevy::asset::{AssetPath, LoadState};
+use bevy::image::ImageSampler;
 use bevy::pbr::{ExtendedMaterial, OpaqueRendererMethod};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
@@ -65,20 +66,20 @@ impl RegionsData {
 
 
 
-pub type PlanarPbrBundle = MaterialMeshBundle<RegionsMaterialExtension>;
+// pub type PlanarPbrBundle = MaterialMeshBundle<RegionsMaterialExtension>;
 
 
 pub fn initialize_regions(
     mut commands: Commands,
 
-    mut asset_server: ResMut<AssetServer>, 
+    asset_server: ResMut<AssetServer>, 
 
     mut regions_query: Query<(Entity, &mut RegionsData, &RegionsConfig)>,
 
     mut meshes: ResMut <Assets<Mesh>>,
     mut region_materials: ResMut<Assets<RegionsMaterialExtension>>,
 
-    mut images: ResMut<Assets<Image>>
+     // images: Res <Assets<Image>>
 ) {
     for (region_entity, mut regions_data, regions_config) in regions_query.iter_mut() {
         if regions_data.regions_data_status ==  RegionsDataStatus::NotLoaded {
@@ -110,7 +111,7 @@ pub fn initialize_regions(
                         opaque_render_method: OpaqueRendererMethod::Auto,
                         alpha_mode: AlphaMode::Blend,
 
-                        base_color: Color::rgba(1.0, 1.0, 1.0, 0.1),
+                        base_color: Color::srgba(1.0, 1.0, 1.0, 0.1),
 
                         reflectance: 0.0,
                         perceptual_roughness: 0.9,
@@ -135,12 +136,17 @@ pub fn initialize_regions(
            let dimensions = regions_config.boundary_dimensions.clone();
 
              // ground plane
-           let regions_plane = commands.spawn(PlanarPbrBundle {
-                mesh: meshes.add(Plane3d::default().mesh().size( dimensions.x, dimensions.y )),
-                material: regions_material,
-                transform: Transform::from_xyz(dimensions.x/2.0, 0.0, dimensions.y/2.0),
-                ..default()
-            })
+           let regions_plane = commands.spawn_empty()
+
+           .insert((
+
+               Mesh3d ( meshes.add(Plane3d::default().mesh().size( dimensions.x, dimensions.y )) ) ,
+               MeshMaterial3d  ( regions_material ) ,
+                 Transform::from_xyz(dimensions.x/2.0, 0.0, dimensions.y/2.0),
+                
+          
+
+            ))
            .insert(RegionPlaneMesh{})
            .id();
 
@@ -181,16 +187,18 @@ pub fn load_regions_texture_from_image(
         }
 
         if regions_data.regions_image_data_load_status ==false {
+
             let texture_image: &mut Image = match &regions_data.texture_image_handle {
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded != Some(LoadState::Loaded) {
-                      //  println!("regions texture not yet loaded");
+                 
+                    if texture_image_loaded.is_some_and(|st| st.is_loaded()) {
+                        images.get_mut(texture_image_handle).unwrap()
+                    }else {
                         continue;
                     }
-
-                    images.get_mut(texture_image_handle).unwrap()
+                    
                 }
                 None => continue,
             };
@@ -200,10 +208,11 @@ pub fn load_regions_texture_from_image(
             regions_data_res.regions_data_map = Some( *raw_data  ) ;
 
             // Specify the desired texture format
-            let desired_format = TextureFormat::Rgba8Uint;
+            
 
+            texture_image.texture_descriptor.format = TextureFormat::Rgba8Uint; 
+            texture_image.sampler = ImageSampler::nearest() ;
 
-            texture_image.texture_descriptor.format = desired_format; 
             // Create a new texture descriptor with the desired format
            // let mut texture_descriptor = TextureDescriptor
 
@@ -233,7 +242,7 @@ pub fn listen_for_region_events(
 
     //plane_mesh_query: Query<Entity, With<RegionPlaneMesh>>,
 
-     plane_mat_ext_handle_query: Query<&Handle<RegionsMaterialExtension>, With<RegionPlaneMesh>>,
+     plane_mat_ext_handle_query: Query<&MeshMaterial3d<RegionsMaterialExtension>, With<RegionPlaneMesh>>,
 
     mut region_materials: ResMut<Assets<RegionsMaterialExtension>>,
 

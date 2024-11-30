@@ -15,7 +15,7 @@ pub struct ToolPreviewResource {
 
 
 pub fn update_tool_uniforms(
-    region_mat_ext_query: Query<&Handle<RegionsMaterialExtension>, With<RegionPlaneMesh>>,
+    region_mat_ext_query: Query<&MeshMaterial3d<RegionsMaterialExtension>, With<RegionPlaneMesh>>,
 
     mut terrain_materials: ResMut<Assets<RegionsMaterialExtension>>,
 
