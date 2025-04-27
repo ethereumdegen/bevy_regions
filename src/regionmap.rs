@@ -102,6 +102,13 @@ impl RegionMap for RegionMapU8 {
     let height = image.size().y as usize;
     let format = image.texture_descriptor.format;
 
+    let image_data = match &image.data {
+
+        Some( x ) => x ,
+        None => return Err(RegionMapError::LoadingError) 
+
+    } ; 
+
    if format!= TextureFormat::Rgba8Uint &&  format != TextureFormat::R8Uint && format != TextureFormat::Rgba8Unorm && format != TextureFormat::Rgba8UnormSrgb {
         println!("regionmap: wrong format {:?}", format);
         return Err(RegionMapError::LoadingError);
@@ -115,7 +122,7 @@ impl RegionMap for RegionMapU8 {
       
             let index = (y * width + x) * 4;
            
-            row.push(image.data[index]  ); //only read the R channel 
+            row.push(image_data[index]  ); //only read the R channel 
         }
         region_map.push(row);
     }

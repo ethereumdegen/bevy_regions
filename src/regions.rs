@@ -9,7 +9,7 @@ use bevy::render::render_resource::{
 
 use super::regionmap::{RegionMap,RegionMapU8,SubRegionMapU8};
 
-use bevy::utils::HashMap;
+use bevy::platform::collections::hash_map::HashMap;
 
  
 use crate::regions_config::RegionsConfig;
